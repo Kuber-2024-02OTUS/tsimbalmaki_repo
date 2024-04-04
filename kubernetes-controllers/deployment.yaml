@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-server
+  namespace: homework
+  labels:
+    app: nginx
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      volumes:
+      - name: homework-volume
+        emptyDir: {}
+      containers:
+      - name: web
+        image: nginx
+        ports:
+        - containerPort: 8000
+        volumeMounts:
+        - name: homework-volume
+          mountPath: /homework
+        readinessProbe:
+          exec:
+            command:
+            - cat
+            - /homework/index.html
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        lifecycle:
+          preStop:
+            exec:
+              command: ["sh", "-c", "rm -R /homework"]
+      initContainers:
+      - name: init-container
+        image: busybox
+        command: 
+        - wget
+        - "-O"
+        - "/init/index.html"
+        - http://info.cern.ch
+        volumeMounts:
+        - mountPath: /init
+          name: homework-volume
+      nodeSelector:
+        homework: "true"
