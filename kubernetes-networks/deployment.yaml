@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-server
+  namespace: homework
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      volumes:
+      - name: workdir
+        emptyDir: {}
+      containers:
+      - name: web-server
+        image: nginx:1.26
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        ports:
+        - containerPort: 8000
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /homework
+          name: workdir
+      initContainers:
+      - name: install
+        image: busybox
+        command:
+        - wget
+        - "-O"
+        - "/init/cern.html"
+        - http://info.cern.ch
+        volumeMounts:
+        - mountPath: /init
+          name: workdir
+        
